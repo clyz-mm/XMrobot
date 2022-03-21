@@ -33,9 +33,9 @@ func main() {
 	botToken := mytoken.BotToken(appId, token)
 
 	// 沙箱
-	api := mybotgo.NewSandboxOpenAPI(botToken).WithTimeout(3 * time.Second)
+	//api := mybotgo.NewSandboxOpenAPI(botToken).WithTimeout(3 * time.Second)
 	// 正式
-	//api := botgo.NewOpenAPI(botToken).WithTimeout(3 * time.Second)
+	api := mybotgo.NewOpenAPI(botToken).WithTimeout(3 * time.Second)
 
 	ctx := context.Background()
 	// 获取 websocket 信息
