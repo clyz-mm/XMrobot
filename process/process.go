@@ -36,6 +36,7 @@ func (p Processor) ProcessMessage(input string, data *mydto.WSATMessageData) err
 		},
 	}
 	var temp string
+	// 判断当前是否为游玩模式
 	if play && cmd != "结束" && cmd != "提示" {
 		temp = cmd
 		cmd = gameName
@@ -85,6 +86,9 @@ func (p Processor) ProcessMessage(input string, data *mydto.WSATMessageData) err
 			} else if idiom == "0" {
 				toCreate.Content = "刚才的成语没有接出来哦"
 			} else if idiom == "win" {
+				// 用户赢得比赛，并退出游玩模式
+				play = false
+				gameName = ""
 				toCreate.Content = "恭喜你，赢得了这场游戏，真厉害！"
 			} else {
 				currentIdiom = idiom
