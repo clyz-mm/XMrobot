@@ -2,8 +2,8 @@
 package local
 
 import (
-	"XMrobot/logs"
 	"XMrobot/manager"
+	"XMrobot/mybotgo/log"
 	"XMrobot/mybotgo/mydto"
 	"XMrobot/mybotgo/websocket"
 	"XMrobot/mytoken"
@@ -23,12 +23,13 @@ type ChanManager struct {
 
 // Start 启动本地 session manager
 func (l *ChanManager) Start(apInfo *mydto.WebsocketAP, token *mytoken.MyToken, intents *mydto.Intent) error {
+	defer log.Sync()
 	if err := manager.CheckSessionLimit(apInfo); err != nil {
-		logs.LogError("[ws/session/local] session limited apInfo: ", apInfo)
+		log.Errorf("[ws/session/local] session limited apInfo: ", apInfo)
 		return err
 	}
 	startInterval := manager.CalcInterval(apInfo.SessionStartLimit.MaxConcurrency)
-	logs.LogInfo("[ws/session/local] will start %d sessions and per session start interval is %s",
+	log.Infof("[ws/session/local] will start %d sessions and per session start interval is %s",
 		apInfo.Shards, startInterval)
 
 	// 按照shards数量初始化，用于启动连接的管理
@@ -69,7 +70,7 @@ func (l *ChanManager) newConnect(session mydto.Session) {
 	}()
 	wsClient := websocket.ClientImpl.New(session)
 	if err := wsClient.Connect(); err != nil {
-		logs.LogError(err)
+		log.Error(err)
 		l.sessionChan <- session // 连接失败，丢回去队列排队重连
 		return
 	}
@@ -82,11 +83,11 @@ func (l *ChanManager) newConnect(session mydto.Session) {
 		err = wsClient.Identify()
 	}
 	if err != nil {
-		logs.LogError("[ws/session] Identify/Resume err ", err)
+		log.Errorf("[ws/session] Identify/Resume err ", err)
 		return
 	}
 	if err := wsClient.Listening(); err != nil {
-		logs.LogError("[ws/session] Listening err ", err)
+		log.Errorf("[ws/session] Listening err ", err)
 		currentSession := wsClient.Session()
 		// 对于不能够进行重连的session，需要清空 session id 与 seq
 		if manager.CanNotResume(err) {
@@ -96,7 +97,7 @@ func (l *ChanManager) newConnect(session mydto.Session) {
 		// 一些错误不能够鉴权，比如机器人被封禁，这里就直接退出了
 		if manager.CanNotIdentify(err) {
 			msg := fmt.Sprintf("can not identify because server return %+v, so process exit", err)
-			logs.LogError(msg)
+			log.Errorf(msg)
 			panic(msg) // 当机器人被下架，或者封禁，将不能再连接，所以 panic
 		}
 		// 将 session 放到 session chan 中，用于启动新的连接，当前连接退出
